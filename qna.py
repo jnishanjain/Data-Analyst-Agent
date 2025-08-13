@@ -14,8 +14,12 @@ def extract_questions(text: str) -> List[str]:
     return out
 
 def classify_question(q: str, has_csv: bool) -> str:
-    cues = ["in the dataset", "in the csv", "average", "count", "top", "group", "mean", "sum", "unique", "by "]
+    cues = [
+        "in the dataset", "in the csv", "average", "count", "top", "group", "mean", "sum", "unique",
+        "by ", "total", "sales", "tax", "median", "max", "min", "correlation", "plot", "chart", "graph"
+    ]
     return "csv" if has_csv and any(c in q.lower() for c in cues) else "web"
+
 
 def plan_csv_op(q: str, df: pd.DataFrame) -> Dict[str, Any]:
     ql = q.lower()

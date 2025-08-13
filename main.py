@@ -1,6 +1,6 @@
 import argparse
 from app.io import load_txt, load_csv_optional
-from app.core import process_inputs 
+from app.core import process_inputs
 
 def run(txt_path, csv_path=None):
     text = load_txt(txt_path)
@@ -15,6 +15,6 @@ def run(txt_path, csv_path=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--txt", required=True)
-    parser.add_argument("--csv", required=False)
+    parser.add_argument("--csv")
     args = parser.parse_args()
     run(args.txt, args.csv)

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+requests
+pandas
+beautifulsoup4
+python-dotenv
+tqdm

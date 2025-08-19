@@ -1,33 +1,41 @@
 import requests
+import pandas as pd
 from bs4 import BeautifulSoup
+from io import StringIO
 
-def build_queries(question: str):
-    return ["https://en.wikipedia.org/wiki/Main_Page"]
+def scrape_website(url: str) -> str:
+    """
+    Scrape main readable content + tables from a Wikipedia article.
+    Returns combined plain text and table CSV snippets.
+    """
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; Bot/0.1)"}
+        response = requests.get(url, headers=headers, timeout=20)
+        response.raise_for_status()
+    except Exception as e:
+        return f"Failed to fetch {url}: {e}"
 
-def fetch_page(url: str):
-    r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-    r.raise_for_status()
-    return r.text
+    soup = BeautifulSoup(response.text, "html.parser")
 
-def extract_text(html: str, max_chars=2000):
-    soup = BeautifulSoup(html, "html.parser")
-    ps = [p.get_text(" ", strip=True) for p in soup.find_all("p")]
-    return " ".join(ps)[:max_chars]
+    # ✅ Wikipedia: main article text lives in <div id="mw-content-text">
+    content_div = soup.find("div", {"id": "mw-content-text"})
+    if not content_div:
+        return "No content section found."
 
-def answer_via_web(q: str):
-    urls = build_queries(q)
-    sources, snippets = [], []
-    for url in urls:
+    texts = []
+    for p in content_div.find_all(["p", "h1", "h2", "h3"], recursive=True):
+        text = p.get_text(strip=True)
+        if text:
+            texts.append(text)
+
+    # ✅ Get first few tables (like the “highest-grossing films” table)
+    tables = []
+    for table in content_div.find_all("table", {"class": "wikitable"}):
         try:
-            text = extract_text(fetch_page(url))
-            if text:
-                sources.append(url)
-                snippets.append(text[:500])
-        except:
+            df = pd.read_html(StringIO(str(table)))[0]
+            tables.append(df.head(10).to_csv(index=False))  # limit size
+        except Exception:
             continue
-    return {
-        "queries": urls,
-        "sources": sources,
-        "snippets": snippets,
-        "synthesis": f"Synthesized from {len(sources)} sources." if sources else "No sources fetched."
-    }
+
+    combined = "\n\n".join(texts + tables)
+    return combined
